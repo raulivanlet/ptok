@@ -1,0 +1,29 @@
+┌ frontend:
+│ .env
+│ .env.example
+│ .eslintrc.json
+│ components.json
+│ next-env.d.ts
+│ next.config.mjs
+│ package.json
+│ postcss.config.mjs
+├┬ src:
+│└─┬ app:
+│  ├─┬ (auth):
+│  │ ├─┬ settings:
+│  │ │ └ page.tsx
+│  │ ├─┬ sign-in:
+│  │ │ └ page.tsx
+│  │ ├─┬ sign-up:
+│  │ │ └ page.tsx
+│ tailwind.config.ts
+│ tsconfig.json
+└ types.d.ts
+
+
+┌ single down and right
+│ single vertical
+┬ single down and horizontal
+└ single up and right
+├ single vertical and right
+─ single horizontal

@@ -1,0 +1,20 @@
+{
+  "name": "ptok",
+  "version": "1.0.1",
+  "description": "Ptok stands for pre-tokenizer, used to generate a description of the project to the LLM.",
+  "main": "index.js",
+  "bin": {
+    "ptok": "./index.js"
+  },
+  "scripts": {
+    "start": "node index.js",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "dependencies": {
+    "yargs": "^17.7.2"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs"
+}
