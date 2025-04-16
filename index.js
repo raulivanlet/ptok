@@ -9,17 +9,29 @@ const { hideBin } = require("yargs/helpers");
 const argv = yargs(hideBin(process.argv))
 	.option("help", {
 		alias: "h",
-		description: "Show help",
 		type: "boolean",
+		description: "Show help",
 	})
 	.option("pretty", {
 		alias: "p",
-		description: "Show output with pretty formatting",
 		type: "boolean",
+		description: "Show output with pretty formatting",
+	})
+	.option("depth", {
+		alias: "d",
+		type: "number",
+		description: "Max depth to recurse (0 = current dir only, 1 = current directory + immediate children , etc.)",
+		default: 1000,
+	})
+	.option("ignore", {
+		alias: "i",
+		type: "array",
+		description: "Directories to ignore",
+		default: ["node_modules", ".git"],
 	}).argv;
 
 // Function to list files recursively
-const listFilesRecursively = (directory, indent = "", isLast = false, isRoot = true) => {
+const listFilesRecursively = (directory, indent = "", isLast = false, isRoot = true, currentDepth = 0) => {
 	let items;
 	try {
 		items = fs.readdirSync(directory);
@@ -29,14 +41,13 @@ const listFilesRecursively = (directory, indent = "", isLast = false, isRoot = t
 		} else {
 			console.warn(`[Permission denied]: ${directory}`);
 		}
-		return; // Skip this directory
+		return;
 	}
 
 	// Print the current directory name
 	if (argv.pretty) {
 		const prefix = isRoot ? "" : isLast ? "└" : "";
-		const connector = isRoot ? "" : isLast ? "" : "";
-		console.log(`${indent}${prefix}${connector} ${path.basename(directory)}:`);
+		console.log(`${indent}${prefix} ${path.basename(directory)}:`);
 	} else {
 		console.log(`${indent}${path.basename(directory)}:`);
 	}
@@ -47,46 +58,47 @@ const listFilesRecursively = (directory, indent = "", isLast = false, isRoot = t
 		const isItemLast = index === items.length - 1;
 		const newIndent = argv.pretty ? `${indent}${isLast ? " " : "│ "}` : `${indent}  `;
 
-		if (item === "node_modules" || item === ".git" || item === ".svn") {
-			// Skip node_modules directory
-			return;
-		}
+		if (argv.ignore.includes(item)) return;
 
 		if (isDirectory) {
-			// Recursively list contents of the directory
-			const hasChildren = fs.readdirSync(fullPath).length > 0;
+			let hasChildren = false;
+			try {
+				hasChildren = fs.readdirSync(fullPath).length > 0;
+			} catch (err) {
+				if (argv.pretty) {
+					console.warn(`${indent}⚠️  [Permission denied]: ${fullPath}`);
+				} else {
+					console.warn(`[Permission denied]: ${fullPath}`);
+				}
+				return;
+			}
+
 			const dirPrefix = isItemLast ? "└" : "├";
-			const dirConnector = hasChildren ? "┬" : "";
+			const dirConnector = argv.pretty && hasChildren && currentDepth + 1 < argv.depth ? "┬" : "";
 
 			if (argv.pretty) {
 				console.log(`${indent}${dirPrefix}${dirConnector} ${item}:`);
+			} else {
+				console.log(`${newIndent}${item}/`);
 			}
 
-			listFilesRecursively(fullPath, newIndent, isItemLast, false);
+			// Only recurse if we're not at max depth
+			if (currentDepth + 1 < argv.depth) {
+				listFilesRecursively(fullPath, newIndent, isItemLast, false, currentDepth + 1);
+			}
 		} else {
-			// Print the file name
 			if (argv.pretty) {
 				const filePrefix = isItemLast ? "└" : "│";
 				console.log(`${indent}${filePrefix} ${item}`);
 			} else {
-				console.log(`${indent}   ${item}`);
+				console.log(`${newIndent}${item}`);
 			}
 		}
 	});
 };
 
-// Show help message
-if (argv.help) {
-	console.log("Usage: list-files-recursive [options]");
-	console.log();
-	console.log("Options:");
-	console.log("  --help, -h     Show help");
-	console.log("  --pretty, -p   Show output with pretty formatting");
-	process.exit(0);
-}
-
 // Get the directory to start listing from
 const directory = process.cwd();
 
 // List files recursively starting from the current directory
-listFilesRecursively(directory);
+listFilesRecursively(directory, "", false, true, 0);
